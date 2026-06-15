@@ -44,7 +44,9 @@
     </div>
 
     <section class="my-items">
-      <h2>我发布的物品</h2>
+      <div class="section-header">
+        <h2>我发布的物品</h2>
+      </div>
       <div v-if="myItems.length" class="waterfall waterfall--compact">
         <ItemCard
           v-for="item in myItems"
@@ -54,6 +56,37 @@
         />
       </div>
       <EmptyState v-else title="还没有发布物品" description="发布一件闲置后会出现在这里" mark="物" />
+    </section>
+
+    <section class="wishlist">
+      <div class="section-header">
+        <h2>我的心愿单</h2>
+        <span class="wishlist-header">
+          <span class="section-subtitle">共 {{ favoriteItems.length }} 件收藏</span>
+          <button
+            v-if="favoriteItems.length"
+            class="text-link"
+            type="button"
+            @click="clearWishlist"
+          >
+            清空心愿单
+          </button>
+        </span>
+      </div>
+      <div v-if="favoriteItems.length" class="waterfall waterfall--compact">
+        <ItemCard
+          v-for="item in favoriteItems"
+          :key="item.id"
+          :item="item"
+          :owner="getItemOwner(item.user_id)"
+        />
+      </div>
+      <EmptyState
+        v-else
+        title="心愿单还是空的"
+        description="看到心动的物品，点击心形图标就能收藏在这里"
+        mark="♥"
+      />
     </section>
   </section>
 </template>
@@ -67,10 +100,12 @@ import ItemCard from '@/components/common/ItemCard.vue';
 import UserBrief from '@/components/common/UserBrief.vue';
 import { ItemStatus } from '@/constants/item';
 import { useAuth } from '@/hooks/useAuth';
+import { useFavoriteStore } from '@/stores/favoriteStore';
 import { useItemStore } from '@/stores/itemStore';
 
 const { currentUser, users, login, updateProfile } = useAuth();
 const itemStore = useItemStore();
+const favoriteStore = useFavoriteStore();
 const selectedUserId = ref('');
 
 const form = reactive({
@@ -101,6 +136,15 @@ watch(
 
 const myItems = computed(() => (currentUser.value ? itemStore.myItems(currentUser.value.id) : []));
 const availableCount = computed(() => myItems.value.filter((item) => item.status === ItemStatus.AVAILABLE).length);
+const favoriteItems = computed(() => favoriteStore.myFavoriteItems.filter(Boolean));
+
+const getItemOwner = (userId: string) => users.value.find((user) => user.id === userId);
+
+const clearWishlist = () => {
+  if (window.confirm('确定要清空心愿单吗？此操作不可撤销。')) {
+    favoriteStore.clearAll();
+  }
+};
 
 const save = async () => {
   await updateProfile({ ...form });

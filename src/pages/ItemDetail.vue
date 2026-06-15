@@ -29,6 +29,22 @@
         <UserBrief v-if="owner" :user="owner" />
 
         <div v-if="!isMine" class="exchange-box">
+          <div class="exchange-box__actions">
+            <button
+              class="favorite-action-btn"
+              :class="{ 'favorite-action-btn--active': isFavorited }"
+              type="button"
+              @click="toggleFavorite"
+            >
+              <svg v-if="isFavorited" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+              <svg v-else viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+              <span>{{ isFavorited ? '已收藏' : '收藏' }}</span>
+            </button>
+          </div>
           <label>
             我的交换物
             <select v-model="selectedItemId">
@@ -66,6 +82,7 @@ import { ExchangeStatus } from '@/constants/exchange';
 import { ItemStatus } from '@/constants/item';
 import { useAuthStore } from '@/stores/authStore';
 import { useExchangeStore } from '@/stores/exchangeStore';
+import { useFavoriteStore } from '@/stores/favoriteStore';
 import { useItemStore } from '@/stores/itemStore';
 import { formatCondition, formatDate, formatItemStatus, statusToneClass } from '@/utils/formatters';
 import { message } from '@/utils/message';
@@ -74,10 +91,18 @@ const route = useRoute();
 const itemStore = useItemStore();
 const authStore = useAuthStore();
 const exchangeStore = useExchangeStore();
+const favoriteStore = useFavoriteStore();
 
 const item = computed(() => itemStore.items.find((entry) => entry.id === route.params.id));
 const owner = computed(() => authStore.users.find((user) => user.id === item.value?.user_id));
 const isMine = computed(() => authStore.currentUser?.id === item.value?.user_id);
+const isFavorited = computed(() => (item.value ? favoriteStore.isFavorite(item.value.id) : false));
+
+const toggleFavorite = () => {
+  if (item.value) {
+    favoriteStore.toggle(item.value.id);
+  }
+};
 const ownAvailableItems = computed(() =>
   authStore.currentUser ? itemStore.availableMyItems(authStore.currentUser.id) : [],
 );
